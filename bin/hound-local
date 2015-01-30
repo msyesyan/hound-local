@@ -1,0 +1,37 @@
+#!/bin/bash
+
+REGX_RUBY=*\.rb
+  REGX_JS=*\.js
+REGX_SCSS=*\.scss
+
+GIT_DIFF_FILES=$(git diff --name-only --diff-filter=AMR master)
+
+declare -a ruby_files
+declare -a js_files
+declare -a scss_files
+
+function arrange_files {
+  for i in $GIT_DIFF_FILES; do
+    case $i in
+      $REGX_RUBY) ruby_files=("${ruby_files[@]}" $i) ;;
+      $REGX_JS)     js_files=("${js_files[@]}" $i)     ;;
+      $REGX_SCSS) scss_files=("${scss_files[@]}" $i) ;;
+    esac
+  done
+}
+
+arrange_files
+
+if [[ ${#ruby_files[@]} != 0 ]]; then
+  echo review ruby files ...
+  rubocop ${ruby_files[@]} --config $HOME/.rubocop.yml --format html --out ./hound_local/rubocop.html
+fi
+if [[ ${#js_files[@]} != 0 ]]; then
+  echo review javascript files ...
+  jshint ${js_files[@]}   --config $HOME/.jshintrc --reporter /usr/local/lib/node_modules/jshint-html-reporter/reporter.js > ./hound_local/jshint.html
+fi
+if [[ ${#scss_files[@]} != 0 ]]; then
+  echo review scss files ...
+  scss-lint ${scss_files[@]} --config $HOME/.scss-lint.yml --format=XML > ./hound_local/scss-lint.xml
+fi
+
